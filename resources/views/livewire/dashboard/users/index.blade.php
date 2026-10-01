@@ -1,6 +1,8 @@
 <?php
 
+use App\Mail\RoleChangedMail;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
@@ -34,6 +36,8 @@ new #[Layout('components.layouts.app')] class extends Component {
 
     public function toggleRole(User $user, string $roleName): void
     {
+        $oldRoles = $user->roles->pluck('name')->toArray();
+
         if ($user->hasRole($roleName)) {
             $user->removeRole($roleName);
         } else {
@@ -41,6 +45,12 @@ new #[Layout('components.layouts.app')] class extends Component {
         }
 
         $user->load('roles');
+        $newRoles = $user->roles->pluck('name')->toArray();
+
+        if ($oldRoles !== $newRoles) {
+            Mail::to($user->email)->send(new RoleChangedMail($user, $oldRoles, $newRoles));
+        }
+
         session()->flash('success', 'Rôle mis à jour pour ' . $user->name . '.');
     }
 
@@ -63,6 +73,14 @@ new #[Layout('components.layouts.app')] class extends Component {
             <h1 class="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white">Utilisateurs</h1>
             <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Gérez les comptes et les rôles de vos utilisateurs.</p>
         </div>
+        @if (auth()->user()->can('user.manage'))
+            <a href="{{ route('dashboard.users.create') }}" wire:navigate class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/30 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Nouvel utilisateur
+            </a>
+        @endif
     </div>
 
     {{-- Filters --}}
@@ -92,7 +110,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                         <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-4">
-                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style="background-color: {{ $user->hasRole('admin') ? 'var(--color-primary)' : $user->hasRole('editor') ? 'var(--color-secondary)' : $user->hasRole('author') ? 'var(--color-accent-violet)' : 'var(--color-zinc-400)' }}">
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style="background-color: {{ $user->hasRole('admin') ? 'var(--color-primary)' : ($user->hasRole('editor') ? 'var(--color-secondary)' : ($user->hasRole('author') ? 'var(--color-accent-violet)' : 'var(--color-zinc-400)')) }}">
                                         {{ strtoupper(mb_substr($user->name, 0, 2)) }}
                                     </div>
                                     <div class="min-w-0">

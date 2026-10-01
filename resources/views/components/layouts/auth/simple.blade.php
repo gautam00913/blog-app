@@ -46,12 +46,12 @@
                     {{-- Stats --}}
                     <div class="flex items-center gap-8">
                         <div>
-                            <p class="text-3xl font-bold text-white">24+</p>
+                            <p class="text-3xl font-bold text-white">100+</p>
                             <p class="text-sm text-zinc-400">Articles</p>
                         </div>
                         <div class="h-12 w-px bg-zinc-700"></div>
                         <div>
-                            <p class="text-3xl font-bold text-white">4</p>
+                            <p class="text-3xl font-bold text-white">20+</p>
                             <p class="text-sm text-zinc-400">Auteurs</p>
                         </div>
                         <div class="h-12 w-px bg-zinc-700"></div>

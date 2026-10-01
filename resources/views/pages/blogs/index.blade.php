@@ -3,11 +3,15 @@
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
+use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Volt\Component;
 
 new #[Layout('components.layouts.public')] class extends Component {
+    
+    use WithPagination;
+
     #[Url]
     public ?string $category = null;
 
@@ -17,15 +21,30 @@ new #[Layout('components.layouts.public')] class extends Component {
     #[Url]
     public ?string $search = null;
 
-    public function getPosts()
+    #[Url]
+    public ?string $tag = null;
+
+    public function with() : array
     {
-        return Post::published()
-            ->with(['author', 'category', 'tags'])
-            ->when($this->category, fn ($q) => $q->whereHas('category', fn ($cq) => $cq->where('slug', $this->category)))
-            ->when($this->author, fn ($q) => $q->where('user_id', $this->author))
-            ->when($this->search, fn ($q) => $q->where('title', 'like', "%{$this->search}%")->orWhere('excerpt', 'like', "%{$this->search}%"))
-            ->latest('published_at')
-            ->paginate(9);
+        return [
+            'posts' => Post::published()
+                    ->with(['author', 'category', 'tags'])
+                    ->when($this->category, fn ($q) => $q->whereHas('category', fn ($cq) => $cq->where('slug', $this->category)))
+                    ->when($this->tag, fn ($q) => $q->whereHas('tags', fn ($cq) => $cq->where('name', $this->tag)))
+                    ->when($this->author, fn ($q) => $q->where('user_id', $this->author))
+                    ->when($this->search, fn ($q) => $q->where('title', 'like', "%{$this->search}%")->orWhere('excerpt', 'like', "%{$this->search}%"))
+                    ->latest('published_at')
+                    ->paginate(9),
+            'categories' => Category::withCount([
+                'posts' => function($query){
+                    $query->where('status', 'published')->whereNotNull('published_at')
+                    ->when($this->tag, fn ($q) => $q->whereHas('tags', fn ($cq) => $cq->where('name', $this->tag)));
+                }
+            ])
+                                    ->where('posts_count', '>', 0)
+                                    ->orderBy('name')
+                                    ->get()
+        ];
     }
 
     public function getAuthorName(): ?string
@@ -35,11 +54,6 @@ new #[Layout('components.layouts.public')] class extends Component {
         }
 
         return User::find($this->author)?->name;
-    }
-
-    public function getCategories()
-    {
-        return Category::withCount('posts')->orderBy('name')->get();
     }
 }; ?>
 
@@ -85,13 +99,13 @@ new #[Layout('components.layouts.public')] class extends Component {
     <section class="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 sticky top-16 z-10">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-center gap-4 py-4 overflow-x-auto">
-                <a href="{{ route('blogs.index', array_filter(['author' => $author, 'search' => $search])) }}" wire:navigate
-                    class="shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all {{ !$category ? 'bg-primary text-white shadow-lg shadow-primary/25' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700' }}">
+                <a wire:click="$wire.set('category', null)"
+                    class="cursor-pointer shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all {{ !$category ? 'bg-primary text-white shadow-lg shadow-primary/25' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700' }}">
                     Tous
                 </a>
-                @foreach ($this->getCategories() as $cat)
-                    <a href="{{ route('blogs.index', array_filter(['category' => $cat->slug, 'author' => $author, 'search' => $search])) }}" wire:navigate
-                        class="shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all {{ $category === $cat->slug ? 'text-white shadow-lg' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700' }}"
+                @foreach ($categories as $cat)
+                    <a wire:click="$wire.set('category', '{{ $cat->slug }}')"
+                        class="cursor-pointer shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all {{ $category === $cat->slug ? 'text-white shadow-lg' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700' }}"
                         @if ($category === $cat->slug) style="background-color: {{ $cat->color }}; box-shadow: 0 10px 15px -3px {{ $cat->color }}40" @endif>
                         {{ $cat->name }}
                         <span class="ml-1 text-xs opacity-70">{{ $cat->posts_count }}</span>
@@ -104,7 +118,6 @@ new #[Layout('components.layouts.public')] class extends Component {
     {{-- Posts Grid --}}
     <section class="py-16 sm:py-20 bg-white dark:bg-zinc-950">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            @php $posts = $this->getPosts(); @endphp
             @if ($posts->count())
                 <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($posts as $post)

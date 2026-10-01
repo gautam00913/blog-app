@@ -3,6 +3,8 @@
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\Tag;
+use App\Models\User;
+use App\Notifications\NewPostPublished;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -20,6 +22,10 @@ new #[Layout('components.layouts.app')] class extends Component {
 
     public function mount(): void
     {
+        if (! auth()->user()->can('post.create')) {
+            abort(403);
+        }
+
         $this->categories = Category::orderBy('name')->pluck('name', 'id')->toArray();
         $this->tags = Tag::orderBy('name')->get()->toArray();
     }
@@ -39,6 +45,10 @@ new #[Layout('components.layouts.app')] class extends Component {
             'status' => ['required', 'in:draft,published'],
         ]);
 
+        if ($this->status === 'published' && ! auth()->user()->can('post.publish')) {
+            $this->status = 'draft';
+        }
+
         $post = Post::create([
             'user_id' => auth()->id(),
             'category_id' => $this->category_id,
@@ -52,6 +62,13 @@ new #[Layout('components.layouts.app')] class extends Component {
 
         if (!empty($this->selectedTags)) {
             $post->tags()->attach($this->selectedTags);
+        }
+
+        if ($this->status === 'published') {
+            $editorsAndAdmins = User::role(['admin', 'editor'])->where('id', '!=', auth()->id())->get();
+            foreach ($editorsAndAdmins as $recipient) {
+                $recipient->notify(new NewPostPublished($post));
+            }
         }
 
         session()->flash('success', 'Article créé avec succès.');
@@ -125,7 +142,9 @@ new #[Layout('components.layouts.app')] class extends Component {
                     class="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                 >
                     <option value="draft">Brouillon</option>
-                    <option value="published">Publié</option>
+                    @if (auth()->user()->can('post.publish'))
+                        <option value="published">Publié</option>
+                    @endif
                 </select>
             </div>
 

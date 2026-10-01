@@ -1,14 +1,19 @@
 <?php
 
 use App\Models\Comment;
+use App\Notifications\CommentApproved;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\Url;
 
 new #[Layout('components.layouts.app')] class extends Component {
     use WithPagination;
 
     public string $status = '';
+    #[Url]
+    public ?int $id = null;
 
     public function updatedStatus(): void
     {
@@ -17,7 +22,8 @@ new #[Layout('components.layouts.app')] class extends Component {
 
     public function getComments()
     {
-        return Comment::with(['post', 'user'])
+        return Comment::with(['post', 'user', 'parent'])
+            ->when($this->id, fn ($q) => $q->where('id', $this->id))
             ->when($this->status === 'approved', fn ($q) => $q->approved())
             ->when($this->status === 'pending', fn ($q) => $q->pending())
             ->latest()
@@ -26,18 +32,29 @@ new #[Layout('components.layouts.app')] class extends Component {
 
     public function approve(Comment $comment): void
     {
+        $this->authorize('comment.manage');
+
         $comment->update(['approved' => true]);
+
+        if ($comment->user) {
+            $comment->user->notify(new CommentApproved($comment));
+        }
+
         session()->flash('success', 'Commentaire approuvé.');
     }
 
     public function reject(Comment $comment): void
     {
+        $this->authorize('comment.manage');
+
         $comment->update(['approved' => false]);
         session()->flash('success', 'Commentaire rejeté.');
     }
 
     public function delete(Comment $comment): void
     {
+        $this->authorize('comment.manage');
+
         $comment->delete();
         session()->flash('success', 'Commentaire supprimé.');
     }
@@ -51,7 +68,7 @@ new #[Layout('components.layouts.app')] class extends Component {
     </div>
 
     {{-- Filters --}}
-    <div>
+    <div class="flex flex-wrap items-center gap-3">
         <select
             wire:model.live="status"
             class="rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
@@ -60,6 +77,15 @@ new #[Layout('components.layouts.app')] class extends Component {
             <option value="approved">Approuvés</option>
             <option value="pending">En attente</option>
         </select>
+        @if ($id)
+            <a wire:click="$wire.set('id', null)"
+                class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary transition-colors cursor-pointer">
+                <span>Annuler le filtre</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+            </a>
+        @endif
     </div>
 
     {{-- Comments List --}}
@@ -74,6 +100,9 @@ new #[Layout('components.layouts.app')] class extends Component {
                         <div>
                             <div class="flex items-center gap-2">
                                 <p class="font-semibold text-zinc-900 dark:text-white">{{ $comment->name }}</p>
+                                @if ($comment->isReply())
+                                    <span class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">Réponse</span>
+                                @endif
                                 @if ($comment->approved)
                                     <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Approuvé</span>
                                 @else
@@ -84,6 +113,12 @@ new #[Layout('components.layouts.app')] class extends Component {
                                 {{ $comment->email }} · {{ $comment->created_at->diffForHumans() }}
                                 · sur <span class="font-medium text-zinc-700 dark:text-zinc-300">{{ $comment->post->title ?? 'Article supprimé' }}</span>
                             </p>
+                            @if ($comment->isReply() && $comment->parent)
+                                <p class="mt-2 border-l-2 border-primary/30 pl-3 text-xs text-zinc-500 dark:text-zinc-400">
+                                    En réponse à <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ $comment->parent->name }}</span> :
+                                    « {{ Str::limit($comment->parent->body, 100) }} »
+                                </p>
+                            @endif
                             <p class="mt-3 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">{{ $comment->body }}</p>
                         </div>
                     </div>

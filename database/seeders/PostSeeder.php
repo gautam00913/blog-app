@@ -7,6 +7,7 @@ use App\Models\Comment;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
+use Database\Factories\CommentFactory;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -138,21 +139,33 @@ class PostSeeder extends Seeder
             $post->tags()->attach($tags->random(rand(2, 4)));
         }
 
-        // Create comments for published posts
+        // Create comments with nested replies for published posts
         $publishedPosts = Post::published()->get();
-        $commentNames = ['Alice Martin', 'Bob Durand', 'Claire Fontaine', 'David Moreau', 'Emma Petit'];
 
         foreach ($publishedPosts as $post) {
+            $rootComments = collect();
+
             $commentCount = fake()->numberBetween(1, 3);
             for ($i = 0; $i < $commentCount; $i++) {
-                Comment::create([
-                    'post_id' => $post->id,
-                    'user_id' => null,
-                    'name' => fake()->randomElement($commentNames),
-                    'email' => fake()->safeEmail(),
-                    'body' => fake()->paragraph(1),
-                    'approved' => fake()->boolean(80),
-                ]);
+                $comment = Comment::factory()
+                    ->for($post)
+                    ->when($i % 2 === 1, fn (CommentFactory $factory) => $factory->forUser($users->random()))
+                    ->create(['approved' => fake()->boolean(80)]);
+
+                if ($comment->approved) {
+                    $rootComments->push($comment);
+                }
+            }
+
+            foreach ($rootComments as $rootComment) {
+                $replyCount = fake()->numberBetween(0, 3);
+
+                for ($i = 0; $i < $replyCount; $i++) {
+                    Comment::factory()
+                        ->replyTo($rootComment)
+                        ->when($i === 0, fn (CommentFactory $factory) => $factory->forUser($users->random()))
+                        ->create(['approved' => fake()->boolean(85)]);
+                }
             }
         }
     }

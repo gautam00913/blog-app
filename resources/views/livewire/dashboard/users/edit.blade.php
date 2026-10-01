@@ -17,6 +17,10 @@ new #[Layout('components.layouts.app')] class extends Component {
 
     public function mount(User $user): void
     {
+        if (! auth()->user()->can('user.manage')) {
+            abort(403);
+        }
+
         $this->user = $user;
         $this->name = $user->name;
         $this->email = $user->email;
@@ -44,7 +48,9 @@ new #[Layout('components.layouts.app')] class extends Component {
 
         $this->user->update($validated);
 
-        $this->user->syncRoles($this->selectedRoles);
+        if ($this->user->id !== auth()->id()) {
+            $this->user->syncRoles($this->selectedRoles);
+        }
 
         session()->flash('success', 'Utilisateur mis à jour avec succès.');
     }

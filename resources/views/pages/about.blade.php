@@ -13,9 +13,10 @@ new #[Layout('components.layouts.public')] class extends Component {
 
     public function mount(): void
     {
-        $this->postsCount = Post::published()->count();
         $this->categoriesCount = Category::count();
-        $this->authors = User::has('posts')->withCount('posts')->get();
+        $this->authors = User::has('posts')->withCount([
+                                'posts' => fn($query) => $query->where('status', 'published')->whereNotNull('published_at')
+                            ])->get()->each(fn($author) => $this->postsCount += $author->posts_count);
     }
 }; ?>
 
@@ -76,7 +77,7 @@ new #[Layout('components.layouts.public')] class extends Component {
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="reveal grid grid-cols-2 gap-8 lg:grid-cols-4">
                 <div class="text-center">
-                    <p class="text-4xl sm:text-5xl font-bold text-zinc-900 dark:text-white">{{ $postsCount }}+</p>
+                    <p class="text-4xl sm:text-5xl font-bold text-zinc-900 dark:text-white">{{ $postsCount }}@if($postsCount)+@endif</p>
                     <p class="mt-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">Articles publiés</p>
                 </div>
                 <div class="text-center">

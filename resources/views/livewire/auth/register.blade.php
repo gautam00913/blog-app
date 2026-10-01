@@ -8,7 +8,7 @@ use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
-new #[Layout('components.layouts.auth')] class extends Component {
+new #[Layout('components.layouts.auth', ['title' => "Inscription"])] class extends Component {
     public string $name = '';
     public string $email = '';
     public string $password = '';
@@ -83,7 +83,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <div class="flex items-start gap-3">
             <input type="checkbox" id="terms" class="mt-1 h-4 w-4 rounded border-zinc-300 text-primary focus:ring-primary" required>
             <label for="terms" class="text-sm text-zinc-500 dark:text-zinc-400">
-                J'accepte les <a href="#" class="font-medium text-primary hover:text-primary-dark transition-colors">conditions d'utilisation</a> et la <a href="#" class="font-medium text-primary hover:text-primary-dark transition-colors">politique de confidentialité</a>
+                J'accepte les <a href="{{ route('cgu') }}" class="font-medium text-primary hover:text-primary-dark transition-colors" wire:navigate>conditions d'utilisation</a> et la <a href="{{ route('confidentialite') }}" class="font-medium text-primary hover:text-primary-dark transition-colors" wire:navigate>politique de confidentialité</a>
             </label>
         </div>
 

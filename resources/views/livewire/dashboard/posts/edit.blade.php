@@ -22,6 +22,10 @@ new #[Layout('components.layouts.app')] class extends Component {
 
     public function mount(Post $post): void
     {
+        if (! auth()->user()->can('post.edit') && $post->user_id !== auth()->id()) {
+            abort(403);
+        }
+
         $this->post = $post;
         $this->title = $post->title;
         $this->excerpt = $post->excerpt ?? '';
@@ -43,6 +47,10 @@ new #[Layout('components.layouts.app')] class extends Component {
             'body' => ['required', 'string'],
             'status' => ['required', 'in:draft,published,scheduled'],
         ]);
+
+        if ($this->status === 'published' && ! auth()->user()->can('post.publish')) {
+            $this->status = $this->post->status;
+        }
 
         $this->post->update([
             'category_id' => $this->category_id,
@@ -127,8 +135,10 @@ new #[Layout('components.layouts.app')] class extends Component {
                     class="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                 >
                     <option value="draft">Brouillon</option>
-                    <option value="published">Publié</option>
-                    <option value="scheduled">Programmé</option>
+                    @if (auth()->user()->can('post.publish'))
+                        <option value="published">Publié</option>
+                        <option value="scheduled">Programmé</option>
+                    @endif
                 </select>
             </div>
 

@@ -14,10 +14,18 @@
             <flux:navlist variant="outline">
                 <flux:navlist.group heading="{{ __('Navigation') }}" class="grid space-y-4">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate class="{{ request()->routeIs('dashboard') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Dashboard') }}</flux:navlist.item>
-                    <flux:navlist.item icon="document-text" :href="route('dashboard.posts')" :current="request()->routeIs('dashboard.posts*')" wire:navigate class="{{ request()->routeIs('dashboard.posts*') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Articles') }}</flux:navlist.item>
-                    <flux:navlist.item icon="folder" :href="route('dashboard.categories')" :current="request()->routeIs('dashboard.categories')" wire:navigate class="{{ request()->routeIs('dashboard.categories') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Catégories') }}</flux:navlist.item>
-                    <flux:navlist.item icon="chat-bubble-left" :href="route('dashboard.comments')" :current="request()->routeIs('dashboard.comments')" wire:navigate class="{{ request()->routeIs('dashboard.comments') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Commentaires') }}</flux:navlist.item>
-                    <flux:navlist.item icon="users" :href="route('dashboard.users')" :current="request()->routeIs('dashboard.users*')" wire:navigate class="{{ request()->routeIs('dashboard.users*') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Utilisateurs') }}</flux:navlist.item>
+                    @if (auth()->user()->can('post.create') || auth()->user()->can('post.edit'))
+                        <flux:navlist.item icon="document-text" :href="route('dashboard.posts')" :current="request()->routeIs('dashboard.posts*')" wire:navigate class="{{ request()->routeIs('dashboard.posts*') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Articles') }}</flux:navlist.item>
+                    @endif
+                    @if (auth()->user()->can('category.manage'))
+                        <flux:navlist.item icon="folder" :href="route('dashboard.categories')" :current="request()->routeIs('dashboard.categories')" wire:navigate class="{{ request()->routeIs('dashboard.categories') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Catégories') }}</flux:navlist.item>
+                    @endif
+                    @if (auth()->user()->can('comment.manage'))
+                        <flux:navlist.item icon="chat-bubble-left" :href="route('dashboard.comments')" :current="request()->routeIs('dashboard.comments')" wire:navigate class="{{ request()->routeIs('dashboard.comments') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Commentaires') }}</flux:navlist.item>
+                    @endif
+                    @if (auth()->user()->can('user.manage'))
+                        <flux:navlist.item icon="users" :href="route('dashboard.users')" :current="request()->routeIs('dashboard.users*')" wire:navigate class="{{ request()->routeIs('dashboard.users*') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Utilisateurs') }}</flux:navlist.item>
+                    @endif
                 </flux:navlist.group>
             </flux:navlist>
 
@@ -71,10 +79,12 @@
         </flux:sidebar>
 
         <!-- Mobile User Menu -->
-        <flux:header class="lg:hidden border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+        <flux:header class="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
             <flux:spacer />
+
+            @livewire('notification-bell')
 
             <flux:dropdown position="top" align="end">
                 <flux:profile

@@ -2,7 +2,7 @@
 
 use App\Models\Category;
 use App\Models\Post;
-use App\Models\Subscription;
+use App\Models\Subscriber;
 use App\Models\User;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -21,7 +21,7 @@ new #[Layout('components.layouts.public')] class extends Component {
     public function mount(): void
     {
         $this->authorsCount = User::has('posts')->count();
-        $this->subscribersCount = Subscription::count();
+        $this->subscribersCount = Subscriber::verified()->count();
 
         $this->featuredPost = Post::published()
             ->with(['author', 'category'])
@@ -37,13 +37,28 @@ new #[Layout('components.layouts.public')] class extends Component {
             ->take(3)
             ->get();
 
-        $this->categories = Category::withCount('posts')->orderBy('name')->where('posts_count', '>', 0)->get();
+        $this->categories = Category::withCount([
+            'posts' => fn($query) => $query->where('status', 'published')->whereNotNull('published_at')
+        ])->orderBy('name')->where('posts_count', '>', 0)->inRandomOrder()->take(6)->get();
         $this->categoriesCount = $this->categories->count();
 
         $this->authors = User::has('posts')
             ->inRandomOrder()
             ->take(4)
             ->get();
+    }
+     
+    protected function formatNumber(int $number): string
+    {
+        if ($number >= 1_000_000) {
+            return sprintf('%.1dM', $number / 1_000_000);
+        }
+
+        if ($number >= 1_000) {
+            return sprintf('%.1dk', $number / 1_000);
+        }
+
+        return sprintf('%d', $number);
     }
 }; ?>
 
@@ -249,7 +264,7 @@ new #[Layout('components.layouts.public')] class extends Component {
 
             <div class="reveal mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
                 @foreach ($categories as $category)
-                    <a href="{{ route('categories') }}?slug={{ $category->slug }}" wire:navigate
+                    <a href="{{ route('blogs.index') }}?category={{ $category->slug }}" wire:navigate
                         class="group relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-800 p-6 shadow-sm border border-zinc-200 dark:border-zinc-700 hover-lift text-center">
                         <div class="absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity" style="background: linear-gradient(to bottom right, {{ $category->color }}10, transparent)"></div>
                         <div class="relative flex h-14 w-14 items-center justify-center rounded-2xl group-hover:text-white transition-all mx-auto text-white" style="background-color: {{ $category->color }}">
@@ -274,19 +289,19 @@ new #[Layout('components.layouts.public')] class extends Component {
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="reveal grid grid-cols-2 gap-8 lg:grid-cols-4">
                 <div class="text-center">
-                    <p class="text-4xl sm:text-5xl font-bold text-zinc-900 dark:text-white">{{ $postsCount }}+</p>
+                    <p class="text-4xl sm:text-5xl font-bold text-zinc-900 dark:text-white">{{ $this->formatNumber($postsCount) }}</p>
                     <p class="mt-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">Articles publiés</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-4xl sm:text-5xl font-bold text-zinc-900 dark:text-white">{{ $authorsCount }}</p>
+                    <p class="text-4xl sm:text-5xl font-bold text-zinc-900 dark:text-white">{{ $this->formatNumber($authorsCount) }}</p>
                     <p class="mt-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">Auteur{{ $authorsCount > 1 ? 's' : '' }} expert{{ $authorsCount > 1 ? 's' : '' }}</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-4xl sm:text-5xl font-bold text-zinc-900 dark:text-white">{{ $categoriesCount }}</p>
+                    <p class="text-4xl sm:text-5xl font-bold text-zinc-900 dark:text-white">{{ $this->formatNumber($categoriesCount) }}</p>
                     <p class="mt-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">Catégorie{{ $categoriesCount > 1 ? 's' : '' }}</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-4xl sm:text-5xl font-bold text-zinc-900 dark:text-white">{{ $subscribersCount }}+</p>
+                    <p class="text-4xl sm:text-5xl font-bold text-zinc-900 dark:text-white">{{ $this->formatNumber($subscribersCount) }}</p>
                     <p class="mt-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">Abonnés newsletter</p>
                 </div>
             </div>
@@ -309,20 +324,13 @@ new #[Layout('components.layouts.public')] class extends Component {
                     votre boîte mail.
                 </p>
 
-                <form class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-                    <div class="relative flex-1 max-w-md">
-                        <input type="email" placeholder="Votre adresse e-mail"
-                            class="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
-                    </div>
-                    <button type="submit"
-                        class="rounded-xl bg-primary px-8 py-4 text-base font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/40 transition-all">
-                        S'inscrire
-                    </button>
-                </form>
+                <livewire:newsletter.subscribe />
 
-                <p class="mt-4 text-sm text-zinc-500">
-                    Rejoignez <span class="font-semibold text-white">{{ $subscribersCount }}</span> abonné{{ $subscribersCount > 1 ? 's' : '' }}. Désabonnement en un clic.
-                </p>
+                @if($subscribersCount)
+                    <p class="mt-4 text-sm text-zinc-500">
+                        Rejoignez <span class="font-semibold text-white">{{ $subscribersCount }}</span> abonné{{ $subscribersCount > 1 ? 's' : '' }}. Désabonnement en un clic.
+                    </p>
+                @endif
             </div>
         </div>
     </section>

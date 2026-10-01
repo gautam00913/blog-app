@@ -3,15 +3,21 @@
 use App\Models\Category;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
+use Livewire\WithPagination;
 
 new #[Layout('components.layouts.public')] class extends Component {
-    public $categories = [];
-    public ?string $activeSlug = null;
 
-    public function mount(): void
+    use WithPagination;
+
+    public function with(): array
     {
-        $this->activeSlug = request()->get('slug');
-        $this->categories = Category::withCount('posts')->orderBy('name')->get();
+        return [
+            'categories' => Category::withCount([
+                                'posts' => fn($query) => $query->where('status', 'published')->whereNotNull('published_at')
+                            ])
+                            ->orderBy('name')
+                            ->paginate(9)
+        ];
     }
 }; ?>
 
@@ -39,7 +45,7 @@ new #[Layout('components.layouts.public')] class extends Component {
             <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 @forelse ($categories as $category)
                     <a href="{{ route('blogs.index') }}?category={{ $category->slug }}" wire:navigate
-                        class="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm hover-lift dark:border-zinc-800 dark:bg-zinc-900 {{ $activeSlug === $category->slug ? 'ring-2 ring-primary' : '' }}">
+                        class="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm hover-lift dark:border-zinc-800 dark:bg-zinc-900">
                         <div class="absolute top-0 right-0 h-32 w-32 -translate-y-8 translate-x-8 rounded-full transition-colors" style="background-color: {{ $category->color }}10"></div>
                         <div class="relative">
                             <div class="flex h-14 w-14 items-center justify-center rounded-2xl text-white" style="background-color: {{ $category->color }}">
@@ -73,6 +79,9 @@ new #[Layout('components.layouts.public')] class extends Component {
                         <p class="text-sm text-zinc-500 dark:text-zinc-400">Aucune catégorie disponible pour le moment.</p>
                     </div>
                 @endforelse
+            </div>
+            <div class="mt-12">
+                {{ $categories->links() }}
             </div>
         </div>
     </section>

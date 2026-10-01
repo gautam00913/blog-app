@@ -29,10 +29,12 @@
             <flux:spacer />
 
             <div class="flex items-center gap-3">
+                <livewire:search-posts />
                 @if (Route::has('login'))
                     @auth
                         <a href="{{ url('/dashboard') }}" class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/30 transition-all" wire:navigate>
-                            {{ __('Dashboard') }}
+                            <span class="max-lg:hidden">{{ __('Dashboard') }}</span>
+                            <flux:icon icon="chart-bar-square" class="lg:hidden size-5" />
                         </a>
                     @else
                         <a href="{{ route('login') }}" class="text-sm font-medium text-zinc-600 hover:text-primary dark:text-zinc-400 dark:hover:text-primary transition-colors" wire:navigate>
@@ -79,7 +81,11 @@
 
             <div>
                 @if (Route::has('login'))
-                    @guest
+                    @auth
+                        <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold w-full text-white shadow-lg shadow-primary/25 hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/30 transition-all" wire:navigate>
+                            <flux:icon icon="chart-bar-square" class="size-5" />{{ __('Dashboard') }}
+                        </a>
+                    @else
                         <a href="{{ route('login') }}" class="mb-4 inline-flex items-center gap-2 rounded-xl font-medium text-zinc-600 text-sm border px-5 py-2.5 w-full border-zinc-200 hover:text-primary dark:text-zinc-400 dark:hover:text-primary transition-colors" wire:navigate>
                             <flux:icon icon="arrow-right-end-on-rectangle" class="size-5" />{{ __('Log in') }}
                         </a>
@@ -88,7 +94,7 @@
                                 <flux:icon icon="user-plus" class="size-5" />{{ __('Register') }}
                             </a>
                         @endif
-                    @endguest
+                    @endauth
                 @endif
             </div>
         </flux:sidebar>
@@ -138,9 +144,9 @@
                     <div>
                         <h3 class="text-sm font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">Légal</h3>
                         <ul class="mt-4 space-y-3">
-                            <li><a href="#" class="text-sm text-zinc-500 hover:text-primary dark:text-zinc-400 dark:hover:text-primary transition-colors">Mentions légales</a></li>
-                            <li><a href="#" class="text-sm text-zinc-500 hover:text-primary dark:text-zinc-400 dark:hover:text-primary transition-colors">Confidentialité</a></li>
-                            <li><a href="#" class="text-sm text-zinc-500 hover:text-primary dark:text-zinc-400 dark:hover:text-primary transition-colors">CGU</a></li>
+                            <li><a href="{{ route('mentions-legales') }}" wire:navigate class="text-sm text-zinc-500 hover:text-primary dark:text-zinc-400 dark:hover:text-primary transition-colors">Mentions légales</a></li>
+                            <li><a href="{{ route('confidentialite') }}" wire:navigate class="text-sm text-zinc-500 hover:text-primary dark:text-zinc-400 dark:hover:text-primary transition-colors">Confidentialité</a></li>
+                            <li><a href="{{ route('cgu') }}" wire:navigate class="text-sm text-zinc-500 hover:text-primary dark:text-zinc-400 dark:hover:text-primary transition-colors">CGU</a></li>
                         </ul>
                     </div>
 
@@ -167,5 +173,14 @@
         </footer>
 
         @fluxScripts
+        <script>
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    console.log("open-search-modal")
+                    Livewire.dispatch('open-search-modal');
+                }
+            });
+        </script>
     </body>
 </html>

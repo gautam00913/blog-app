@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Observers\PostObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
+#[ObservedBy(PostObserver::class)]
 class Post extends Model
 {
     use HasFactory;
@@ -109,10 +112,20 @@ class Post extends Model
     public function incrementViews(): void
     {
         $this->increment('views_count');
+        $this->views()->create([
+            'user_ip' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'user_id' => auth()->id() ?? null,
+        ]);
     }
 
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    public function views(): HasMany
+    {
+        return $this->hasMany(PostView::class);
     }
 }

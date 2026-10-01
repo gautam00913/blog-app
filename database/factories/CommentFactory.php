@@ -41,4 +41,12 @@ class CommentFactory extends Factory
             'email' => $user->email,
         ]);
     }
+
+    public function replyTo(Comment $parent): static
+    {
+        return $this->state(fn () => [
+            'post_id' => $parent->post_id,
+            'parent_id' => $parent->id,
+        ]);
+    }
 }
