@@ -1,5 +1,7 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import 'trix';
+import 'trix/dist/trix.css';
 
 window.Pusher = Pusher;
 
@@ -11,6 +13,56 @@ window.Echo = new Echo({
     wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
     forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
     enabledTransports: ['ws', 'wss'],
+});
+
+function isBlankHtml(html) {
+    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() === '';
+}
+
+/*
+ * Trix 2 registers its custom elements from a setTimeout(0) in its module body,
+ * so <trix-editor> may still be an un-upgraded HTMLElement when Alpine boots.
+ * Binding is therefore deferred to the trix-initialize event Trix fires once the
+ * element is upgraded.
+ */
+document.addEventListener('alpine:init', () => {
+    window.Alpine.data('richTextEditor', (property, initialValue) => ({
+        isBound: false,
+
+        init() {
+            const editor = this.$refs.editor;
+
+            if (editor.editor) {
+                this.bind(editor, initialValue);
+            } else {
+                editor.addEventListener('trix-initialize', () => this.bind(editor, initialValue), { once: true });
+            }
+        },
+
+        bind(editor, initialValue) {
+            if (this.isBound) {
+                return;
+            }
+
+            this.isBound = true;
+
+            if (initialValue) {
+                editor.value = initialValue;
+            }
+
+            editor.dataset.empty = String(isBlankHtml(editor.value));
+
+            editor.addEventListener('trix-change', () => {
+                const value = editor.value;
+
+                editor.dataset.empty = String(isBlankHtml(value));
+
+                // Deferred: assigning a $wire property does not send a request,
+                // the value travels with the next commit (the form submit).
+                this.$wire.$set(property, value);
+            });
+        },
+    }));
 });
 
 function initRevealAnimations() {
@@ -37,7 +89,13 @@ function initRevealAnimations() {
         });
     });
 }
-window.Echo.private('notifications').listen('.notification.created', (event) => console.log(event))
+
+window.Echo.private('App.Models.User.' + window.userId)
+    .notification((notification) => {
+        if(notification.type === 'notification.created'){
+            window.Livewire.dispatch('new-notification', {notification: notification})
+        }
+    });
 
 document.addEventListener('DOMContentLoaded', initRevealAnimations);
 

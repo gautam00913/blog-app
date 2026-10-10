@@ -109,6 +109,16 @@ class Post extends Model
         return $this->status === 'draft';
     }
 
+    /**
+     * Estimated reading time, ignoring the HTML markup of the body.
+     */
+    public function readingMinutes(): int
+    {
+        $words = str_word_count(strip_tags($this->body ?? ''));
+
+        return max(1, (int) ceil($words / 200));
+    }
+
     public function incrementViews(): void
     {
         $this->increment('views_count');

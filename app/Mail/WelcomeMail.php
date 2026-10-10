@@ -16,6 +16,7 @@ class WelcomeMail extends Mailable
     public function __construct(
         public User $user,
         public string $password,
+        public ?string $role = null,
     ) {}
 
     public function envelope(): Envelope

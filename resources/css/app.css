@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
 
+@plugin '@tailwindcss/typography';
+
 @source "../views";
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
@@ -253,4 +255,97 @@ select:focus[data-flux-control] {
 .dark textarea:focus[data-flux-control],
 .dark select:focus[data-flux-control] {
     @apply ring-offset-zinc-900;
+}
+
+/*
+ | Trix 2 ships light-theme-only defaults (#bbb borders, black icons) and no
+ | placeholder support, so the editor is re-skinned to match the zinc palette.
+ | These live in a cascade layer, which is why they win over Trix's own unlayered
+ | stylesheet despite the bundle order.
+ */
+@layer components {
+
+    trix-toolbar .trix-button-row {
+        @apply flex-wrap gap-y-2;
+    }
+
+    trix-toolbar .trix-button-group {
+        @apply mb-0 rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900;
+    }
+
+    trix-toolbar .trix-button-group:not(:first-child) {
+        @apply ml-2;
+    }
+
+    trix-toolbar .trix-button {
+        @apply rounded-md px-2.5 py-1.5 text-xs font-semibold text-zinc-600 transition-colors dark:text-zinc-300;
+    }
+
+    trix-toolbar .trix-button:hover {
+        @apply bg-zinc-200/70 dark:bg-zinc-800;
+    }
+
+    trix-toolbar .trix-button.trix-button--active {
+        @apply bg-primary text-white;
+    }
+
+    trix-toolbar + trix-editor {
+        @apply -mt-px rounded-t-xl;
+    }
+
+    trix-editor {
+        @apply min-h-80 rounded-b-xl border border-zinc-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100;
+    }
+
+    trix-editor:focus {
+        @apply outline-none ring-2 ring-primary/50;
+    }
+
+    trix-editor > div {
+        @apply my-4;
+    }
+
+    trix-editor > div:first-child {
+        @apply mt-0;
+    }
+
+    trix-editor > div:last-child {
+        @apply mb-0;
+    }
+
+    trix-editor[data-empty='true']::before {
+        content: attr(data-placeholder);
+        @apply pointer-events-none block text-zinc-400;
+    }
+
+    .dark trix-editor[data-empty='true']::before {
+        @apply text-zinc-500;
+    }
+
+    trix-editor blockquote {
+        @apply border-l-2 border-zinc-300 pl-3 text-zinc-600 italic dark:border-zinc-700 dark:text-zinc-400;
+    }
+
+    trix-editor pre {
+        @apply overflow-x-auto rounded-lg bg-zinc-100 p-3 font-mono text-xs dark:bg-zinc-800;
+    }
+}
+
+/*
+ | Trix serialises blank lines as <div> blocks, which Tailwind Typography leaves
+ | unstyled, while the seeded bodies use <p>. Spacing is harmonised so both
+ | formats render identically.
+ */
+@layer components {
+    .prose > div {
+        margin-block: 1.25em;
+    }
+
+    .prose > div:first-child {
+        margin-top: 0;
+    }
+
+    .prose > div:last-child {
+        margin-bottom: 0;
+    }
 }

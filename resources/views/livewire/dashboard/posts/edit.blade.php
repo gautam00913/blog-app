@@ -16,6 +16,7 @@ new #[Layout('components.layouts.app')] class extends Component {
     public ?int $category_id = null;
     public array $selectedTags = [];
     public string $status = 'draft';
+    public ?string $published_at = null;
 
     public array $categories = [];
     public array $tags = [];
@@ -46,6 +47,7 @@ new #[Layout('components.layouts.app')] class extends Component {
             'excerpt' => ['nullable', 'string', 'max:500'],
             'body' => ['required', 'string'],
             'status' => ['required', 'in:draft,published,scheduled'],
+            'published_at' => ['required_if:status,published', 'date', 'after:now'],
         ]);
 
         if ($this->status === 'published' && ! auth()->user()->can('post.publish')) {
@@ -59,7 +61,7 @@ new #[Layout('components.layouts.app')] class extends Component {
             'excerpt' => $this->excerpt,
             'body' => $this->body,
             'status' => $this->status,
-            'published_at' => $this->status === 'published' && !$this->post->published_at ? now() : $this->post->published_at,
+            'published_at' => $this->published_at ?: ($this->status === 'published' && !$this->post->published_at ? now() : $this->post->published_at),
         ]);
 
         $this->post->tags()->sync($this->selectedTags);
@@ -113,12 +115,11 @@ new #[Layout('components.layouts.app')] class extends Component {
 
                     <div>
                         <label class="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">Contenu</label>
-                        <textarea
-                            wire:model="body"
-                            rows="15"
-                            placeholder="Contenu de l'article en HTML..."
-                            class="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400 font-mono"
-                        ></textarea>
+                        <x-rich-text-editor
+                            property="body"
+                            :value="$body"
+                            placeholder="Rédigez votre article..."
+                        />
                         @error('body') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                     </div>
                 </div>

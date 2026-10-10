@@ -154,7 +154,7 @@
                         <h3 class="text-sm font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">Contact</h3>
                         <ul class="mt-4 space-y-3">
                             <li><a href="mailto:hello@blog.com" class="text-sm text-zinc-500 hover:text-primary dark:text-zinc-400 dark:hover:text-primary transition-colors">hello@blog.com</a></li>
-                            <li><span class="text-sm text-zinc-500 dark:text-zinc-400">Paris, France</span></li>
+                            <li><span class="text-sm text-zinc-500 dark:text-zinc-400">Cotonou, Bénin</span></li>
                         </ul>
                     </div>
                 </div>
@@ -165,14 +165,26 @@
                             &copy; {{ date('Y') }} {{ config('app.name', 'Blog') }}. Tous droits réservés.
                         </p>
                         <p class="text-sm text-zinc-400 dark:text-zinc-500">
-                            Fait avec <span class="text-primary">❤</span> en France
+                            Fait avec <span class="text-primary">❤</span> au Bénin
                         </p>
                     </div>
                 </div>
             </div>
         </footer>
 
+        <flux:toast />
+
+        @if (session('success'))
+            <div
+                data-toast="{{ session('success') }}"
+                x-data
+                x-init="$flux.toast($el.dataset.toast, { variant: 'success' })"
+                class="hidden"
+            ></div>
+        @endif
+
         @fluxScripts
+
         <script>
             document.addEventListener('keydown', function(e) {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'k') {

@@ -168,7 +168,11 @@ new #[Layout('components.layouts.public')] class extends Component {
             $recipients->push($this->post->author);
         }
 
-        $recipients->each(fn (User $user) => $user->notify(new NewCommentCreated($comment)));
+        try{
+            $recipients->each(fn (User $user) => $user->notify(new NewCommentCreated($comment)));
+        }catch(\Exception $e){
+            logger('error sending notification : '. $e->getMessage());
+        }
     }
 
     private function commentRateLimiterKey(): string
@@ -232,7 +236,7 @@ new #[Layout('components.layouts.public')] class extends Component {
                     <span class="text-zinc-600">·</span>
                     <span class="text-sm text-zinc-400">{{ $post->published_at->translatedFormat('d M Y') }}</span>
                     <span class="text-zinc-600">·</span>
-                    <span class="text-sm text-zinc-400">{{ ceil(str_word_count($post->body) / 200) }} min de lecture</span>
+                    <span class="text-sm text-zinc-400">{{ $post->readingMinutes() }} min de lecture</span>
                     <span class="text-zinc-600">·</span>
                     <span class="text-sm text-zinc-400">{{ number_format($post->views_count) }} vue{{ $post->views_count > 1 ? 's' : '' }}</span>
                 </div>
@@ -305,7 +309,7 @@ new #[Layout('components.layouts.public')] class extends Component {
                 @if ($approvedComments->count())
                     <div class="mt-8 space-y-6">
                         @foreach ($approvedComments as $comment)
-                            <div wire:key='comment-{{ $comment->id }}'
+                            <div wire:key='com-{{ $comment->id }}'
                                 id="comment-{{ $comment->id }}"
                                 class="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800 dark:bg-zinc-900"
                             >

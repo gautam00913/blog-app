@@ -3,12 +3,10 @@
 namespace App\Notifications;
 
 use App\Models\Post;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
-class NewPostPublished extends Notification implements ShouldBroadcast
+class NewPostPublished extends Notification
 {
     public function __construct(
         public Post $post,
@@ -40,6 +38,7 @@ class NewPostPublished extends Notification implements ShouldBroadcast
             'type' => 'new_post_published',
             'post_id' => $this->post->id,
             'post_title' => $this->post->title,
+            'created_at' => $this->post->published_at,
             'post_slug' => $this->post->slug,
             'author_name' => $this->post->author->name,
             'message' => "Nouvel article publié : « {$this->post->title} »",
@@ -47,10 +46,8 @@ class NewPostPublished extends Notification implements ShouldBroadcast
         ]);
     }
 
-    public function broadcastOn(): array
+    public function broadcastType(): string
     {
-        return [
-            new PrivateChannel('notifications'),
-        ];
+        return 'notification.created';
     }
 }

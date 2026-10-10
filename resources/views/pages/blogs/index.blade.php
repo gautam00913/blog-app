@@ -149,7 +149,7 @@ new #[Layout('components.layouts.public')] class extends Component {
                                         </div>
                                         <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">{{ $post->author->name }}</span>
                                     </div>
-                                    <span class="text-xs text-zinc-500">{{ ceil(str_word_count($post->body) / 200) }} min</span>
+                                    <span class="text-xs text-zinc-500">{{ $post->readingMinutes() }} min</span>
                                 </div>
                             </div>
                         </a>

@@ -14,7 +14,7 @@ new #[Layout('components.layouts.app')] class extends Component {
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
-    public array $selectedRoles = ['author'];
+    public string $selectedRole = 'author';
 
     public function getRoles()
     {
@@ -27,8 +27,7 @@ new #[Layout('components.layouts.app')] class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'selectedRoles' => ['required', 'array'],
-            'selectedRoles.*' => ['exists:roles,name'],
+            'selectedRole' => ['required', 'exists:roles,name'],
         ]);
 
         $plainPassword = $this->password;
@@ -40,13 +39,17 @@ new #[Layout('components.layouts.app')] class extends Component {
             'email_verified_at' => now(),
         ]);
 
-        $user->syncRoles($this->selectedRoles);
+        $user->syncRoles($this->selectedRole);
 
-        Mail::to($user->email)->send(new WelcomeMail($user, $plainPassword));
+        try{
+            Mail::to($user->email)->send(new WelcomeMail($user, $plainPassword, $this->selectedRole));
+        }catch(\Exception $e){
+            logger("Error sending welcomeMail : ". $e->getMessage());
+        }
 
         session()->flash('success', 'Utilisateur créé avec succès. Un email de bienvenue a été envoyé.');
 
-        return $this->redirect(route('dashboard.users'));
+        return $this->redirect(route('dashboard.users'), navigate: true);
     }
 }; ?>
 
@@ -97,18 +100,24 @@ new #[Layout('components.layouts.app')] class extends Component {
                     <div class="flex flex-wrap gap-2">
                         @foreach ($this->getRoles() as $role)
                             <label class="cursor-pointer">
-                                <input type="checkbox" value="{{ $role->name }}" wire:model="selectedRoles" class="sr-only peer">
+                                <input type="radio" value="{{ $role->name }}" wire:model="selectedRole" class="sr-only peer">
                                 <span class="inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-all
                                     border-zinc-200 bg-white text-zinc-600
                                     peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:text-primary
                                     dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400
                                     dark:peer-checked:border-primary dark:peer-checked:bg-primary/10 dark:peer-checked:text-primary">
-                                    {{ ucfirst($role->name) }}
+                                    {{ match($role->name) {
+                                        'admin' => 'Administrateur',
+                                        'editor' => 'Editeur',
+                                        'author' => 'Auteur',
+                                        'subscriber' => 'Abonné',
+                                        default => '...',
+                                    } }}
                                 </span>
                             </label>
                         @endforeach
                     </div>
-                    @error('selectedRoles') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    @error('selectedRole') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="flex gap-3 pt-2">

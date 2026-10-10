@@ -2,6 +2,9 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
         @include('partials.head')
+        <script>
+            window.userId = @json(auth()->user() ? auth()->user()->id : null);
+        </script>
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-950">
         <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -13,7 +16,8 @@
 
             <flux:navlist variant="outline">
                 <flux:navlist.group heading="{{ __('Navigation') }}" class="grid space-y-4">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate class="{{ request()->routeIs('dashboard') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Dashboard') }}</flux:navlist.item>
+                    <flux:navlist.item icon="home" :href="route('home')" :current="request()->routeIs('home')" wire:navigate class="{{ request()->routeIs('home') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Accueil') }}</flux:navlist.item>
+                    <flux:navlist.item icon="chart-bar-square" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate class="{{ request()->routeIs('dashboard') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Dashboard') }}</flux:navlist.item>
                     @if (auth()->user()->can('post.create') || auth()->user()->can('post.edit'))
                         <flux:navlist.item icon="document-text" :href="route('dashboard.posts')" :current="request()->routeIs('dashboard.posts*')" wire:navigate class="{{ request()->routeIs('dashboard.posts*') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Articles') }}</flux:navlist.item>
                     @endif
@@ -131,6 +135,17 @@
         </flux:header>
 
         {{ $slot }}
+
+        <flux:toast position="top end" />
+
+        @if (session('success'))
+            <div
+                data-toast="{{ session('success') }}"
+                x-data
+                x-init="$flux.toast($el.dataset.toast, { variant: 'success' })"
+                class="hidden"
+            ></div>
+        @endif
 
         @fluxScripts
     </body>

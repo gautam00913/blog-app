@@ -3,12 +3,10 @@
 namespace App\Notifications;
 
 use App\Models\Comment;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
-class CommentApproved extends Notification implements ShouldBroadcast
+class CommentApproved extends Notification
 {
     public function __construct(
         public Comment $comment,
@@ -38,6 +36,7 @@ class CommentApproved extends Notification implements ShouldBroadcast
         return new BroadcastMessage([
             'id' => $this->id,
             'type' => 'comment_approved',
+            'created_at' => now(),
             'comment_id' => $this->comment->id,
             'post_id' => $this->comment->post->id,
             'post_title' => $this->comment->post->title,
@@ -47,10 +46,8 @@ class CommentApproved extends Notification implements ShouldBroadcast
         ]);
     }
 
-    public function broadcastOn(): array
+    public function broadcastType(): string
     {
-        return [
-            new PrivateChannel('notifications'),
-        ];
+        return 'notification.created';
     }
 }

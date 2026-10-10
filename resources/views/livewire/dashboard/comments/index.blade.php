@@ -2,6 +2,7 @@
 
 use App\Models\Comment;
 use App\Notifications\CommentApproved;
+use Flux\Flux;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -40,7 +41,7 @@ new #[Layout('components.layouts.app')] class extends Component {
             $comment->user->notify(new CommentApproved($comment));
         }
 
-        session()->flash('success', 'Commentaire approuvé.');
+        Flux::toast(text: 'Commentaire approuvé.', variant: 'success');
     }
 
     public function reject(Comment $comment): void
@@ -48,7 +49,7 @@ new #[Layout('components.layouts.app')] class extends Component {
         $this->authorize('comment.manage');
 
         $comment->update(['approved' => false]);
-        session()->flash('success', 'Commentaire rejeté.');
+        Flux::toast(text: 'Commentaire rejeté.', variant: 'success');
     }
 
     public function delete(Comment $comment): void
@@ -56,7 +57,7 @@ new #[Layout('components.layouts.app')] class extends Component {
         $this->authorize('comment.manage');
 
         $comment->delete();
-        session()->flash('success', 'Commentaire supprimé.');
+        Flux::toast(text: 'Commentaire supprimé.', variant: 'success');
     }
 }; ?>
 

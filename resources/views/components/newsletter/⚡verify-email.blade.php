@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Subscriber;
+use App\Models\User;
+use App\Notifications\NewSubscriber;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -27,6 +29,12 @@ new #[Layout('components.layouts.public')] class extends Component
         ]);
 
         $this->isValid = true;
+        try{
+            $admins = User::whereHas('roles', fn ($query) => $query->where('name', 'admin')) ->get();
+            Notification::send($admins, new NewSubscriber($subscriber->email));
+        }catch(\Exception $e){
+            logger('error sending notification : '. $e->getMessage());
+        }
     }
 };
 ?>

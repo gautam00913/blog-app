@@ -120,12 +120,11 @@ new #[Layout('components.layouts.app')] class extends Component {
 
                     <div>
                         <label class="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">Contenu</label>
-                        <textarea
-                            wire:model="body"
-                            rows="15"
-                            placeholder="Contenu de l'article en HTML..."
-                            class="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400 font-mono"
-                        ></textarea>
+                        <x-rich-text-editor
+                            property="body"
+                            :value="$body"
+                            placeholder="Rédigez votre article..."
+                        />
                         @error('body') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                     </div>
                 </div>

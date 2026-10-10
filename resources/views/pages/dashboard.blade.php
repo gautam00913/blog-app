@@ -194,7 +194,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                 </div>
                 <div class="divide-y divide-zinc-200 dark:divide-zinc-800">
                     @forelse ($recentComments as $comment)
-                        <div class="flex items-start gap-4 px-6 py-4">
+                        <a href="{{ route('dashboard.comments', ['id' => $comment->id]) }}" wire:navigate class="flex items-start gap-4 px-6 py-4">
                             <div class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
                                 {{ strtoupper(mb_substr($comment->name, 0, 2)) }}
                             </div>
@@ -208,7 +208,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                             @if (!$comment->approved)
                                 <span class="shrink-0 h-2 w-2 rounded-full bg-amber-400"></span>
                             @endif
-                        </div>
+                        </a>
                     @empty
                         <div class="px-6 py-12 text-center">
                             <p class="text-sm text-zinc-500 dark:text-zinc-400">Aucun commentaire.</p>
@@ -262,7 +262,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                 </div>
                 <div class="divide-y divide-zinc-200 dark:divide-zinc-800">
                     @forelse ($recentComments as $comment)
-                        <div class="flex items-start gap-4 px-6 py-4">
+                        <a href="{{ route('blogs.show', ['slug' => $comment->post->slug]) }}#comment-{{ $comment->id }}" class="flex items-start gap-4 px-6 py-4">
                             <div class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
                                 {{ strtoupper(mb_substr($comment->name, 0, 2)) }}
                             </div>
@@ -276,7 +276,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                             @if (!$comment->approved)
                                 <span class="shrink-0 h-2 w-2 rounded-full bg-amber-400"></span>
                             @endif
-                        </div>
+                        </a>
                     @empty
                         <div class="px-6 py-12 text-center">
                             <p class="text-sm text-zinc-500 dark:text-zinc-400">Aucun commentaire.</p>

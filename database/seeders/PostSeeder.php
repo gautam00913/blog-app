@@ -15,7 +15,7 @@ class PostSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = User::all();
+        $users = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['admin', 'editor', 'author']))->get();
         $categories = Category::all();
         $tags = Tag::all();
 

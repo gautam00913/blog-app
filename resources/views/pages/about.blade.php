@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Category;
-use App\Models\Post;
 use App\Models\User;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -14,7 +13,7 @@ new #[Layout('components.layouts.public')] class extends Component {
     public function mount(): void
     {
         $this->categoriesCount = Category::count();
-        $this->authors = User::has('posts')->withCount([
+        $this->authors = User::whereHas('roles', fn($q) => $q->whereIn('name', ['admin', 'editor', 'author']))->withCount([
                                 'posts' => fn($query) => $query->where('status', 'published')->whereNotNull('published_at')
                             ])->get()->each(fn($author) => $this->postsCount += $author->posts_count);
     }
@@ -98,7 +97,7 @@ new #[Layout('components.layouts.public')] class extends Component {
 
     {{-- Team --}}
     @if ($authors->count())
-    <section class="py-20 sm:py-28 bg-white dark:bg-zinc-950">
+    <section id="authors" class="py-20 sm:py-28 bg-white dark:bg-zinc-950">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="reveal text-center max-w-2xl mx-auto">
                 <span class="text-sm font-semibold tracking-wider uppercase text-primary">L'équipe</span>

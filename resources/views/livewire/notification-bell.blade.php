@@ -21,23 +21,17 @@ new class extends Component {
         }
     }
 
-    public function getListeners() 
-    {
-        return [
-            "echo-private:App.Models.User." . auth()->id() . ",.notification.created" => 'newNotification'
-        ];
-    }
-
     public function toggleDropdown(): void
     {
         $this->showDropdown = ! $this->showDropdown;
     }
 
-    public function newNotification($event): void
+    #[On('new-notification')]
+    public function newNotification($notification): void
     {
         $this->unreadCount++;
         $this->notifications = collect($this->notifications)
-            ->prepend($event)
+            ->prepend($notification)
             ->take(10)
             ->toArray();
     }
@@ -55,6 +49,12 @@ new class extends Component {
     {
         auth()->user()->unreadNotifications->markAsRead();
         $this->unreadCount = 0;
+        $this->notifications = auth()->user()
+                ->notifications()
+                ->latest()
+                ->take(10)
+                ->get()
+                ->toArray();
     }
 }; ?>
 
@@ -91,9 +91,10 @@ new class extends Component {
             <div class="max-h-80 overflow-y-auto">
                 @forelse ($notifications as $notification)
                     <a
-                        href="{{ $notification['data']['url'] ?? '#' }}"
+                        href="{{ isset($notification['data']) ? ($notification['data']['url'] ?? '#') : ($notification['url'] ?? '#') }}"
                         wire:click="markAsRead('{{ $notification['id'] }}')"
                         wire:navigate
+                        wire:key="{{ $notification['id'] }}"
                         class="flex items-start gap-3 border-b border-zinc-100 px-4 py-3 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50 transition-colors {{ !isset($notification['read_at']) ? 'bg-primary/5' : '' }}"
                     >
                         <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -101,7 +102,7 @@ new class extends Component {
                         </div>
                         <div class="min-w-0 flex-1">
                             <p class="text-xs text-zinc-700 dark:text-zinc-300 line-clamp-2">
-                                {{ $notification['data']['message'] ?? 'Nouvelle notification' }}
+                                {{ isset($notification['data']) ? ($notification['data']['message'] ?? 'Nouvelle notification') : ($notification['message'] ?? 'Nouvelle notification') }}
                             </p>
                             <p class="mt-1 text-xs text-zinc-400">
                                 {{ \Carbon\Carbon::parse($notification['created_at'])->diffForHumans() }}

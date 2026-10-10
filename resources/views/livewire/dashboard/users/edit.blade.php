@@ -1,5 +1,6 @@
 <?php
 
+use App\Mail\RoleChangedMail;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -13,7 +14,8 @@ new #[Layout('components.layouts.app')] class extends Component {
     public string $email = '';
     public ?string $password = null;
     public ?string $password_confirmation = null;
-    public array $selectedRoles = [];
+    public ?string $selectedRole = null;
+    public ?string $oldRole = null;
 
     public function mount(User $user): void
     {
@@ -24,15 +26,30 @@ new #[Layout('components.layouts.app')] class extends Component {
         $this->user = $user;
         $this->name = $user->name;
         $this->email = $user->email;
-        $this->selectedRoles = $user->roles->pluck('name')->toArray();
+        $this->oldRole = $user->roles()->value('name');
+        $this->selectedRole = $this->oldRole;
     }
 
-    public function getRoles()
+    public function with(): array
     {
-        return Role::all();
+        $color = '';
+        if($this->selectedRole =='admin'){
+            $color = 'var(--color-primary)';
+        } elseif($this->selectedRole =='editor'){
+            $color = 'var(--color-secondary)';
+        }elseif($this->selectedRole =='author'){
+            $color = 'var(--color-accent-violet)';
+        }else{
+            $color = 'var(--color-zinc-400)';
+        }
+
+        return [
+            'roles' => Role::all(),
+            'role_color' => $color
+        ];
     }
 
-    public function save(): void
+    public function save()
     {
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -48,11 +65,17 @@ new #[Layout('components.layouts.app')] class extends Component {
 
         $this->user->update($validated);
 
-        if ($this->user->id !== auth()->id()) {
-            $this->user->syncRoles($this->selectedRoles);
+        if ($this->user->id !== auth()->id() && $this->oldRole !== $this->selectedRole) {
+            $this->user->syncRoles($this->selectedRole);
+            try{
+                Mail::to($this->user->email)->send(new RoleChangedMail($this->user, $this->oldRole, $this->selectedRole));
+            }catch(\Exception $e){
+                logger("Error sending welcomeMail : ". $e->getMessage());
+            }
         }
 
         session()->flash('success', 'Utilisateur mis à jour avec succès.');
+        return $this->redirectRoute('dashboard.users', navigate: true);
     }
 }; ?>
 
@@ -107,12 +130,20 @@ new #[Layout('components.layouts.app')] class extends Component {
         <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <h2 class="text-lg font-semibold text-zinc-900 dark:text-white mb-6">Rôles</h2>
             <div class="space-y-3">
-                @foreach ($this->getRoles() as $role)
-                    <label class="flex items-center gap-3 rounded-xl border border-zinc-200 p-4 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800 transition-colors {{ in_array($role->name, $selectedRoles) ? 'border-primary bg-primary/5' : '' }}">
-                        <input type="checkbox" value="{{ $role->name }}" wire:model="selectedRoles"
+                @foreach ($roles as $role)
+                    <label class="flex items-center gap-3 rounded-xl border border-zinc-200 p-4 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800 transition-colors {{ $role->name == $selectedRole ? 'border-primary bg-primary/5' : '' }}">
+                        <input type="radio" value="{{ $role->name }}" wire:model="selectedRole"
                             class="h-4 w-4 rounded border-zinc-300 text-primary focus:ring-primary/50">
                         <div class="flex-1">
-                            <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ ucfirst($role->name) }}</span>
+                            <span class="text-sm font-semibold text-zinc-900 dark:text-white">
+                                {{ match($role->name) {
+                                    'admin' => 'Administrateur',
+                                    'editor' => 'Editeur',
+                                    'author' => 'Auteur',
+                                    'subscriber' => 'Abonné',
+                                    default => '...',
+                                } }}
+                            </span>
                             <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                                 {{ match($role->name) {
                                     'admin' => 'Accès complet au système',
@@ -129,7 +160,7 @@ new #[Layout('components.layouts.app')] class extends Component {
 
             <div class="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                 <div class="flex items-center gap-3">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style="background-color: {{ $user->hasRole('admin') ? 'var(--color-primary)' : $user->hasRole('editor') ? 'var(--color-secondary)' : $user->hasRole('author') ? 'var(--color-accent-violet)' : 'var(--color-zinc-400)' }}">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style="background-color: {{ $role_color }}">
                         {{ strtoupper(mb_substr($user->name, 0, 2)) }}
                     </div>
                     <div>

@@ -2,6 +2,7 @@
 
 use App\Mail\RoleChangedMail;
 use App\Models\User;
+use Flux\Flux;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -48,21 +49,21 @@ new #[Layout('components.layouts.app')] class extends Component {
         $newRoles = $user->roles->pluck('name')->toArray();
 
         if ($oldRoles !== $newRoles) {
-            Mail::to($user->email)->send(new RoleChangedMail($user, $oldRoles, $newRoles));
+            Mail::to($user->email)->send(new RoleChangedMail($user, $oldRoles[0] ?? null, $newRoles[0] ?? ''));
         }
 
-        session()->flash('success', 'Rôle mis à jour pour ' . $user->name . '.');
+        Flux::toast(text: 'Rôle mis à jour pour ' . $user->name . '.', variant: 'success');
     }
 
     public function deleteUser(User $user): void
     {
         if ($user->id === auth()->id()) {
-            session()->flash('error', 'Vous ne pouvez pas supprimer votre propre compte.');
+            Flux::toast(text: 'Vous ne pouvez pas supprimer votre propre compte.', variant: 'danger');
             return;
         }
 
         $user->delete();
-        session()->flash('success', 'Utilisateur supprimé avec succès.');
+        Flux::toast(text: 'Utilisateur supprimé avec succès.', variant: 'success');
     }
 }; ?>
 
@@ -130,7 +131,13 @@ new #[Layout('components.layouts.app')] class extends Component {
                                                 'subscriber' => 'bg-accent-emerald/10 text-accent-emerald',
                                                 default => 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
                                             } }}">
-                                            {{ ucfirst($role->name) }}
+                                            {{ match($role->name) {
+                                                'admin' => 'Administrateur',
+                                                'editor' => 'Editeur',
+                                                'author' => 'Auteur',
+                                                'subscriber' => 'Abonné',
+                                                default => '...',
+                                            } }}
                                         </span>
                                     @empty
                                         <span class="text-xs text-zinc-400">Aucun rôle</span>

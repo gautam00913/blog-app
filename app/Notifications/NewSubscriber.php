@@ -2,12 +2,10 @@
 
 namespace App\Notifications;
 
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
-class NewSubscriber extends Notification implements ShouldBroadcast
+class NewSubscriber extends Notification
 {
     public function __construct(
         public string $email,
@@ -34,14 +32,13 @@ class NewSubscriber extends Notification implements ShouldBroadcast
             'id' => $this->id,
             'type' => 'new_subscriber',
             'email' => $this->email,
+            'created_at' => now(),
             'message' => "Nouvel abonné : {$this->email}",
         ]);
     }
 
-    public function broadcastOn(): array
+    public function broadcastType(): string
     {
-        return [
-            new PrivateChannel('notifications'),
-        ];
+        return 'notification.created';
     }
 }

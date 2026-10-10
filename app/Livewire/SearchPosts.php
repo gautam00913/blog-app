@@ -26,11 +26,11 @@ class SearchPosts extends Component
             ->with('author', 'category')
             ->where(function ($q) {
                 $q->where('title', 'like', "%{$this->query}%")
-                    ->orWhere('excerpt', 'like', "%{$this->query}%");
+                    ->orWhere('excerpt', 'like', "%{$this->query}%")
+                    ->orWhereHas('author', fn ($cq) => $cq->where('name', 'like', "%{$this->query}%"))
+                    ->orWhereHas('category', fn ($cq) => $cq->where('name', 'like', "%{$this->query}%"))
+                    ->orWhereHas('tags', fn ($cq) => $cq->where('name', 'like', "%{$this->query}%"));
             })
-            ->orWhereHas('author', fn ($cq) => $cq->where('name', 'like', "%{$this->query}%"))
-            ->orWhereHas('category', fn ($cq) => $cq->where('name', 'like', "%{$this->query}%"))
-            ->orWhereHas('tags', fn ($cq) => $cq->where('name', 'like', "%{$this->query}%"))
             ->limit(8)
             ->get()
             ->map(fn ($post) => [

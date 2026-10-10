@@ -15,8 +15,8 @@ class RoleChangedMail extends Mailable
 
     public function __construct(
         public User $user,
-        public array $oldRoles,
-        public array $newRoles,
+        public ?string $oldRole,
+        public string $newRole,
     ) {}
 
     public function envelope(): Envelope

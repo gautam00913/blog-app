@@ -20,7 +20,7 @@ new #[Layout('components.layouts.public')] class extends Component {
 
     public function mount(): void
     {
-        $this->authorsCount = User::has('posts')->count();
+        $this->authorsCount = User::whereHas('roles', fn($q) => $q->whereIn('name', ['admin', 'editor', 'author']))->count();
         $this->subscribersCount = Subscriber::verified()->count();
 
         $this->featuredPost = Post::published()
@@ -42,7 +42,7 @@ new #[Layout('components.layouts.public')] class extends Component {
         ])->orderBy('name')->where('posts_count', '>', 0)->inRandomOrder()->take(6)->get();
         $this->categoriesCount = $this->categories->count();
 
-        $this->authors = User::has('posts')
+        $this->authors = User::whereHas('roles', fn($q) => $q->whereIn('name', ['admin', 'editor', 'author']))
             ->inRandomOrder()
             ->take(4)
             ->get();
@@ -125,7 +125,7 @@ new #[Layout('components.layouts.public')] class extends Component {
                         @endforeach
                     </div>
                     <div class="text-sm text-zinc-400">
-                        <span class="font-semibold text-white">{{ $authorsCount }} auteur{{ $authorsCount > 1 ? 's' : '' }} passionné{{ $authorsCount > 1 ? 's' : '' }}</span> partagent leur expertise
+                        <a href="{{ route('about') }}/#authors" class="font-semibold text-white hover:text-primary hover:underline">{{ $authorsCount }} auteur{{ $authorsCount > 1 ? 's' : '' }} passionné{{ $authorsCount > 1 ? 's' : '' }}</a> partagent leur expertise
                     </div>
                 </div>
                 @endif
@@ -177,7 +177,7 @@ new #[Layout('components.layouts.public')] class extends Component {
                             @endif
                             <span class="text-sm text-zinc-400">{{ $featuredPost->published_at->translatedFormat('d M Y') }}</span>
                             <span class="text-sm text-zinc-400">·</span>
-                            <span class="text-sm text-zinc-400">{{ ceil(str_word_count($featuredPost->body) / 200) }} min de lecture</span>
+                            <span class="text-sm text-zinc-400">{{ $featuredPost->readingMinutes() }} min de lecture</span>
                         </div>
                         <h3 class="text-2xl sm:text-3xl font-bold text-white group-hover:text-primary transition-colors">
                             {{ $featuredPost->title }}

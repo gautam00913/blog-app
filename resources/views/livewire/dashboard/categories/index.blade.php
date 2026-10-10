@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Category;
+use Flux\Flux;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -55,7 +56,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                 'description' => $this->description,
                 'color' => $this->color,
             ]);
-            session()->flash('success', 'Catégorie mise à jour avec succès.');
+            Flux::toast(text: 'Catégorie mise à jour avec succès.', variant: 'success');
         } else {
             Category::create([
                 'name' => $this->name,
@@ -63,7 +64,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                 'description' => $this->description,
                 'color' => $this->color,
             ]);
-            session()->flash('success', 'Catégorie créée avec succès.');
+            Flux::toast(text: 'Catégorie créée avec succès.', variant: 'success');
         }
 
         $this->closeModal();
@@ -72,7 +73,7 @@ new #[Layout('components.layouts.app')] class extends Component {
     public function delete(Category $category): void
     {
         $category->delete();
-        session()->flash('success', 'Catégorie supprimée avec succès.');
+        Flux::toast(text: 'Catégorie supprimée avec succès.', variant: 'success');
     }
 }; ?>
 

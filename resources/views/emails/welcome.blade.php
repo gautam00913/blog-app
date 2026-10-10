@@ -3,7 +3,14 @@
 
 Bonjour **{{ $user->name }}**,
 
-Un compte a été créé pour vous sur **{{ config('app.name', 'Blog') }}**. Voici vos identifiants de connexion :
+Un compte **{{ match($role) {
+                'admin' => 'Administrateur',
+                'editor' => 'Editeur',
+                'author' => 'Auteur',
+                'subscriber' => 'Abonné',
+                default => '',
+            } }}** 
+a été créé pour vous sur **{{ config('app.name', 'Blog') }}**. Voici vos identifiants de connexion :
 
 **Email :** {{ $user->email }}
 **Mot de passe :** {{ $password }}

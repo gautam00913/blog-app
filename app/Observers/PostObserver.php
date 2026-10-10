@@ -6,6 +6,7 @@ use App\Models\Post;
 use App\Models\Subscriber;
 use App\Notifications\NewPostPublishedToSubscribers;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
+use Illuminate\Support\Facades\Notification;
 
 class PostObserver implements ShouldHandleEventsAfterCommit
 {
@@ -35,10 +36,12 @@ class PostObserver implements ShouldHandleEventsAfterCommit
             return;
         }
 
-        $notification = new NewPostPublishedToSubscribers($post);
+        try {
+            $subscribers = Subscriber::verified()->get();
+            Notification::send($subscribers, new NewPostPublishedToSubscribers($post));
+        } catch (\Exception $e) {
+            logger('error sending notification : '.$e->getMessage());
+        }
 
-        Subscriber::query()
-            ->verified()
-            ->each(fn (Subscriber $subscriber) => $subscriber->notify($notification));
     }
 }
