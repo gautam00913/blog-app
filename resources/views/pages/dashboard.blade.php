@@ -78,6 +78,13 @@ new #[Layout('components.layouts.app')] class extends Component {
                 </svg>
                 Nouvel article
             </a>
+        @else
+            <a href="{{ route('dashboard.become-author') }}" wire:navigate class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/30 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Devenir auteur
+            </a>
         @endcan
     </div>
 
@@ -163,7 +170,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                     @forelse ($recentPosts as $post)
                         <a href="{{ route('dashboard.posts.edit', $post) }}" wire:navigate class="group flex items-center gap-4 px-6 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                             <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-                                <img src="{{ $post->featured_image }}" alt="" class="h-full w-full object-cover">
+                                <img src="{{ $post->featuredImageUrl() }}" alt="" class="h-full w-full object-cover">
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-semibold text-zinc-900 dark:text-white group-hover:text-primary transition-colors truncate">{{ $post->title }}</p>
@@ -229,7 +236,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                     @forelse ($recentPosts as $view)
                         <a href="{{ route('blogs.show', $view->post->slug) }}" wire:navigate class="group flex items-center gap-4 px-6 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                             <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-                                <img src="{{ $view->post->featured_image }}" alt="" class="h-full w-full object-cover">
+                                <img src="{{ $view->post->featuredImageUrl() }}" alt="" class="h-full w-full object-cover">
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-semibold text-zinc-900 dark:text-white group-hover:text-primary transition-colors truncate">{{ $view->post->title }}</p>

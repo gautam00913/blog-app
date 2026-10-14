@@ -5,17 +5,24 @@ use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
 use App\Notifications\NewPostPublished;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
+use Livewire\WithFileUploads;
 
 new #[Layout('components.layouts.app')] class extends Component {
+    use WithFileUploads;
+
     public string $title = '';
     public string $excerpt = '';
     public string $body = '';
     public ?int $category_id = null;
     public array $selectedTags = [];
     public string $status = 'draft';
+    public $featured_image = null;
+    public ?string $published_at = null;
 
     public array $categories = [];
     public array $tags = [];
@@ -42,14 +49,23 @@ new #[Layout('components.layouts.app')] class extends Component {
             'category_id' => ['required', 'exists:categories,id'],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'body' => ['required', 'string'],
-            'status' => ['required', 'in:draft,published'],
+            'status' => ['required', 'in:draft,published,scheduled'],
+            'featured_image' => $this->featured_image instanceof UploadedFile
+                ? ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048']
+                : ['nullable', 'string'],
         ]);
 
-        if ($this->status === 'published' && ! auth()->user()->can('post.publish')) {
+        if ($this->status !== 'draft' && ! auth()->user()->can('post.publish')) {
             $this->status = 'draft';
         }
 
-        $post = Post::create([
+        if ($this->status === 'scheduled') {
+            $this->validate([
+                'published_at' => ['required', 'date', 'after:now'],
+            ]);
+        }
+
+        $data = [
             'user_id' => auth()->id(),
             'category_id' => $this->category_id,
             'title' => $this->title,
@@ -57,17 +73,33 @@ new #[Layout('components.layouts.app')] class extends Component {
             'excerpt' => $this->excerpt,
             'body' => $this->body,
             'status' => $this->status,
-            'published_at' => $this->status === 'published' ? now() : null,
-        ]);
+            'published_at' => match ($this->status) {
+                'published' => now(),
+                'scheduled' => Carbon::parse($this->published_at),
+                default => null,
+            },
+        ];
+
+        if ($this->featured_image instanceof UploadedFile) {
+            $data['featured_image'] = $this->featured_image->store('posts', 'public');
+        }
+
+        $post = Post::create($data);
 
         if (!empty($this->selectedTags)) {
             $post->tags()->attach($this->selectedTags);
         }
 
         if ($this->status === 'published') {
-            $editorsAndAdmins = User::role(['admin', 'editor'])->where('id', '!=', auth()->id())->get();
-            foreach ($editorsAndAdmins as $recipient) {
-                $recipient->notify(new NewPostPublished($post));
+            $editorsAndAdmins = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['admin', 'editor']))
+                ->where('id', '!=', auth()->id())
+                ->get();
+            try{
+                foreach ($editorsAndAdmins as $recipient) {
+                    $recipient->notify(new NewPostPublished($post));
+                }
+            }catch(\Exception $e){
+                logger("Error sending post published notification : ". $e->getMessage());
             }
         }
 
@@ -143,8 +175,34 @@ new #[Layout('components.layouts.app')] class extends Component {
                     <option value="draft">Brouillon</option>
                     @if (auth()->user()->can('post.publish'))
                         <option value="published">Publié</option>
+                        <option value="scheduled">Programmé</option>
                     @endif
                 </select>
+                @if ($status === 'scheduled')
+                    <div class="mt-4">
+                        <label class="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">Date de publication</label>
+                        <input
+                            type="datetime-local"
+                            wire:model="published_at"
+                            class="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                        >
+                        @error('published_at') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    </div>
+                @endif
+            </div>
+
+            {{-- Image à la une --}}
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                <h3 class="text-sm font-semibold text-zinc-900 dark:text-white mb-4">Image à la une</h3>
+                @if ($featured_image instanceof UploadedFile)
+                    <div class="mb-3 overflow-hidden rounded-xl">
+                        <img src="{{ $featured_image->temporaryUrl() }}" alt="Aperçu de l'image" class="h-40 w-full object-cover">
+                    </div>
+                @else
+                    <p class="mb-3 text-xs text-zinc-500 dark:text-zinc-400">Aucune image. Formats acceptés : JPG, PNG, WebP, GIF (2 Mo max).</p>
+                @endif
+                <input type="file" wire:model="featured_image" accept="image/jpeg,image/png,image/webp,image/gif" class="block w-full text-sm text-zinc-600 dark:text-zinc-400 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-zinc-700 dark:file:bg-zinc-800 dark:file:text-zinc-300 hover:file:bg-zinc-200 dark:hover:file:bg-zinc-700">
+                @error('featured_image') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
             </div>
 
             {{-- Category --}}

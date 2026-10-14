@@ -46,6 +46,14 @@ class PostFactory extends Factory
         ]);
     }
 
+    public function scheduled(): static
+    {
+        return $this->state(fn () => [
+            'status' => 'scheduled',
+            'published_at' => fake()->dateTimeBetween('+1 day', '+1 month'),
+        ]);
+    }
+
     private function generateBody(): string
     {
         $paragraphs = [];

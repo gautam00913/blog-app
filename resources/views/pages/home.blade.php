@@ -164,7 +164,7 @@ new #[Layout('components.layouts.public')] class extends Component {
                 {{-- Main Featured Article --}}
                 <a href="{{ route('blogs.show', $featuredPost->slug) }}" wire:navigate class="group relative overflow-hidden rounded-3xl bg-zinc-900 hover-lift block">
                     <div class="aspect-[16/10] overflow-hidden">
-                        <img src="{{ $featuredPost->featured_image }}" alt="{{ $featuredPost->title }}"
+                        <img src="{{ $featuredPost->featuredImageUrl() }}" alt="{{ $featuredPost->title }}"
                             class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </div>
                     <div class="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/50 to-transparent"></div>
@@ -203,7 +203,7 @@ new #[Layout('components.layouts.public')] class extends Component {
                             class="group relative flex flex-col sm:flex-row overflow-hidden rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover-lift">
                             <div class="sm:w-48 lg:w-56 shrink-0 overflow-hidden">
                                 <div class="aspect-[4/3] sm:aspect-auto sm:h-full">
-                                    <img src="{{ $post->featured_image }}" alt="{{ $post->title }}"
+                                    <img src="{{ $post->featuredImageUrl() }}" alt="{{ $post->title }}"
                                         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
                                 </div>
                             </div>

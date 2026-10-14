@@ -29,6 +29,8 @@
                     @endif
                     @if (auth()->user()->can('user.manage'))
                         <flux:navlist.item icon="users" :href="route('dashboard.users')" :current="request()->routeIs('dashboard.users*')" wire:navigate class="{{ request()->routeIs('dashboard.users*') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Utilisateurs') }}</flux:navlist.item>
+                        <flux:navlist.item icon="inbox" :href="route('dashboard.author-requests')" :current="request()->routeIs('dashboard.author-requests')" wire:navigate class="{{ request()->routeIs('dashboard.author-requests') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __("Demandes d'auteur") }}</flux:navlist.item>
+                        <flux:navlist.item icon="key" :href="route('dashboard.permissions')" :current="request()->routeIs('dashboard.permissions')" wire:navigate class="{{ request()->routeIs('dashboard.permissions') ? 'text-primary font-semibold bg-primary/5' : '' }} rounded-xl">{{ __('Permissions') }}</flux:navlist.item>
                     @endif
                 </flux:navlist.group>
             </flux:navlist>

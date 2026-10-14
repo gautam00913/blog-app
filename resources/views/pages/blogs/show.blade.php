@@ -199,7 +199,9 @@ new #[Layout('components.layouts.public')] class extends Component {
         {{-- Hero --}}
         <section class="relative bg-zinc-950 py-20 sm:py-28 overflow-hidden">
             <div class="absolute inset-0">
-                <img src="{{ $post->featured_image }}" alt="" class="h-full w-full object-cover opacity-20">
+                @if ($image = $post->featuredImageUrl())
+                    <img src="{{ $image }}" alt="" class="h-full w-full object-cover opacity-20">
+                @endif
                 <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-zinc-950/60"></div>
             </div>
             <div class="absolute top-20 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl"></div>
@@ -272,7 +274,7 @@ new #[Layout('components.layouts.public')] class extends Component {
                             <a href="{{ route('blogs.show', $related->slug) }}" wire:navigate
                                 class="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm hover-lift dark:border-zinc-800 dark:bg-zinc-900">
                                 <div class="aspect-[16/10] overflow-hidden">
-                                    <img src="{{ $related->featured_image }}" alt="{{ $related->title }}"
+                                    <img src="{{ $related->featuredImageUrl() }}" alt="{{ $related->title }}"
                                         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
                                 </div>
                                 <div class="flex flex-1 flex-col p-6">

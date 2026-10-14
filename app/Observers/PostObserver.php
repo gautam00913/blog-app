@@ -4,6 +4,8 @@ namespace App\Observers;
 
 use App\Models\Post;
 use App\Models\Subscriber;
+use App\Models\User;
+use App\Notifications\NewPostPublished;
 use App\Notifications\NewPostPublishedToSubscribers;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 use Illuminate\Support\Facades\Notification;
@@ -23,11 +25,12 @@ class PostObserver implements ShouldHandleEventsAfterCommit
      */
     public function updated(Post $post): void
     {
-        if (! $post->wasChanged('status')) {
+        if (! $post->wasChanged('status') || ! $post->isPublished()) {
             return;
         }
 
         $this->notifyVerifiedSubscribers($post);
+        $this->notifyEditors($post);
     }
 
     private function notifyVerifiedSubscribers(Post $post): void
@@ -39,6 +42,19 @@ class PostObserver implements ShouldHandleEventsAfterCommit
         try {
             $subscribers = Subscriber::verified()->get();
             Notification::send($subscribers, new NewPostPublishedToSubscribers($post));
+        } catch (\Exception $e) {
+            logger('error sending notification : '.$e->getMessage());
+        }
+
+    }
+
+    private function notifyEditors(Post $post): void
+    {
+        try {
+            $recipients = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['admin', 'editor']))
+                ->where('id', '!=', $post->user_id)
+                ->get();
+            Notification::send($recipients, new NewPostPublished($post));
         } catch (\Exception $e) {
             logger('error sending notification : '.$e->getMessage());
         }

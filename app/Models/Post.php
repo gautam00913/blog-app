@@ -119,6 +119,19 @@ class Post extends Model
         return max(1, (int) ceil($words / 200));
     }
 
+    public function featuredImageUrl(): ?string
+    {
+        if (blank($this->featured_image)) {
+            return null;
+        }
+
+        if (Str::startsWith($this->featured_image, ['http://', 'https://'])) {
+            return $this->featured_image;
+        }
+
+        return asset('storage/'.$this->featured_image);
+    }
+
     public function incrementViews(): void
     {
         $this->increment('views_count');

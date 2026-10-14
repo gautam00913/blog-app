@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\AuthorRequest;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Volt\Volt;
 
 // Public routes
@@ -40,6 +42,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Comments management - admin, editor
     Volt::route('dashboard/comments', 'dashboard.comments.index')->can('comment.manage')->name('dashboard.comments');
+
+    // Author request form - users who are not yet authors
+    Volt::route('dashboard/become-author', 'dashboard.author-requests.create')->name('dashboard.become-author');
 });
 
 // User management - admin only
@@ -47,6 +52,16 @@ Route::middleware(['auth', 'verified'])->can('user.manage')->group(function () {
     Volt::route('dashboard/users', 'dashboard.users.index')->name('dashboard.users');
     Volt::route('dashboard/users/create', 'dashboard.users.create')->name('dashboard.users.create');
     Volt::route('dashboard/users/{user}/edit', 'dashboard.users.edit')->name('dashboard.users.edit');
+    Volt::route('dashboard/permissions', 'dashboard.permissions.index')->name('dashboard.permissions');
+
+    // Author requests management
+    Volt::route('dashboard/author-requests', 'dashboard.author-requests.index')->name('dashboard.author-requests');
+
+    Route::get('dashboard/author-requests/{authorRequest}/cv', function (AuthorRequest $authorRequest) {
+        abort_unless(Storage::disk('local')->exists($authorRequest->cv_path), 404);
+
+        return Storage::disk('local')->download($authorRequest->cv_path, $authorRequest->cv_original_name ?? 'cv.pdf');
+    })->name('dashboard.author-requests.cv');
 });
 
 require __DIR__.'/auth.php';

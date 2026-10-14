@@ -22,13 +22,15 @@ new #[Layout('components.layouts.app')] class extends Component {
         $this->resetPage();
     }
 
-    public function getPosts()
+    public function with(): array
     {
-        return Post::with(['author', 'category'])
-            ->when($this->search, fn ($q) => $q->where('title', 'like', "%{$this->search}%"))
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->latest()
-            ->paginate(10);
+        return [
+            'posts' => Post::with(['author', 'category'])
+                        ->when($this->search, fn ($q) => $q->where('title', 'like', "%{$this->search}%"))
+                        ->when($this->status, fn ($q) => $q->where('status', $this->status))
+                        ->latest()
+                        ->paginate(10)
+        ];
     }
 
     public function delete(Post $post): void
@@ -96,12 +98,12 @@ new #[Layout('components.layouts.app')] class extends Component {
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
-                    @forelse ($this->getPosts() as $post)
+                    @forelse ($posts as $post)
                         <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-4">
                                     <div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-800">
-                                        <img src="{{ $post->featured_image }}" alt="" class="h-full w-full object-cover">
+                                        <img src="{{ $post->featuredImageUrl() }}" alt="" class="h-full w-full object-cover">
                                     </div>
                                     <div class="min-w-0">
                                         <p class="truncate text-sm font-semibold text-zinc-900 dark:text-white">{{ $post->title }}</p>
@@ -159,7 +161,7 @@ new #[Layout('components.layouts.app')] class extends Component {
             </table>
         </div>
         <div class="border-t border-zinc-200 dark:border-zinc-800 px-6 py-4">
-            {{ $this->getPosts()->links() }}
+            {{ $posts->links() }}
         </div>
     </div>
 </div>

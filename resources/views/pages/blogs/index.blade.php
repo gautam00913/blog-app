@@ -123,10 +123,12 @@ new #[Layout('components.layouts.public')] class extends Component {
                     @foreach ($posts as $post)
                         <a href="{{ route('blogs.show', $post->slug) }}" wire:navigate
                             class="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm hover-lift dark:border-zinc-800 dark:bg-zinc-900">
-                            <div class="aspect-[16/10] overflow-hidden">
-                                <img src="{{ $post->featured_image }}" alt="{{ $post->title }}"
-                                    class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
-                            </div>
+                            @if($image = $post->featuredImageUrl())
+                                <div class="aspect-[16/10] overflow-hidden">
+                                    <img src="{{ $image }}" alt="{{ $post->title }}"
+                                        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+                                </div>
+                            @endif
                             <div class="flex flex-1 flex-col p-6">
                                 <div class="flex items-center gap-2 mb-3">
                                     @if ($post->category)
