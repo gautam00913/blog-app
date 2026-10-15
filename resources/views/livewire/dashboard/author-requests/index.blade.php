@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AuthorRequest;
+use App\Notifications\AuthorRequestReviewed;
 use Flux\Flux;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -55,6 +56,12 @@ new #[Layout('components.layouts.app')] class extends Component {
         $authorRequest->update(['status' => 'accepted', 'reviewed_at' => now()]);
         $authorRequest->user->assignRole('author');
 
+        try {
+            $authorRequest->user->notify(new AuthorRequestReviewed($authorRequest));
+        } catch (\Exception $e) {
+            logger('error sending notification : '.$e->getMessage());
+        }
+
         Flux::toast(text: "{$authorRequest->user->name} est désormais auteur.", variant: 'success');
     }
 
@@ -67,6 +74,12 @@ new #[Layout('components.layouts.app')] class extends Component {
         }
 
         $authorRequest->update(['status' => 'rejected', 'reviewed_at' => now()]);
+
+        try {
+            $authorRequest->user->notify(new AuthorRequestReviewed($authorRequest));
+        } catch (\Exception $e) {
+            logger('error sending notification : '.$e->getMessage());
+        }
 
         Flux::toast(text: "La demande de {$authorRequest->user->name} a été rejetée.", variant: 'success');
     }

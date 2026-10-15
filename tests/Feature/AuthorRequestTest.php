@@ -2,6 +2,7 @@
 
 use App\Models\AuthorRequest;
 use App\Models\User;
+use App\Notifications\AuthorRequestReviewed;
 use App\Notifications\NewAuthorRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
@@ -157,6 +158,42 @@ test('an admin can reject a request without granting the author role', function 
 
     expect($authorRequest->fresh()->status)->toBe('rejected');
     expect($authorRequest->user->fresh()->hasRole('author'))->toBeFalse();
+});
+
+test('the applicant is notified by mail and database when the request is accepted', function () {
+    Notification::fake();
+
+    seedAuthorRole();
+    $admin = authorRequestAdminUser();
+    $authorRequest = AuthorRequest::factory()->create();
+
+    Volt::actingAs($admin)
+        ->test('dashboard.author-requests.index')
+        ->call('accept', $authorRequest->id);
+
+    Notification::assertSentTo($authorRequest->user, AuthorRequestReviewed::class, function (AuthorRequestReviewed $notification) use ($authorRequest) {
+        return in_array('mail', $notification->via($authorRequest->user), true)
+            && in_array('database', $notification->via($authorRequest->user), true)
+            && $notification->authorRequest->is($authorRequest);
+    });
+});
+
+test('the applicant is notified by mail and database when the request is rejected', function () {
+    Notification::fake();
+
+    seedAuthorRole();
+    $admin = authorRequestAdminUser();
+    $authorRequest = AuthorRequest::factory()->create();
+
+    Volt::actingAs($admin)
+        ->test('dashboard.author-requests.index')
+        ->call('reject', $authorRequest->id);
+
+    Notification::assertSentTo($authorRequest->user, AuthorRequestReviewed::class, function (AuthorRequestReviewed $notification) use ($authorRequest) {
+        return in_array('mail', $notification->via($authorRequest->user), true)
+            && in_array('database', $notification->via($authorRequest->user), true)
+            && $notification->authorRequest->is($authorRequest);
+    });
 });
 
 test('an admin can download the cv of a request', function () {
